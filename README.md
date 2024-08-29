@@ -12,8 +12,10 @@ This document contains Splunk queries for SOC investigation purposes. These prom
 - [Admin Activity Tracker](#admin-activity-tracker)
 - [MFA Checker (Success)](#mfa-checker-success)
 - [MFA Checker (Failure)](#mfa-checker-failure)
-
-
+- [MFA Checker (Neutral)](#mfa-checker-neutral)
+- [Authentication Review, 24 Hours](#authentication-review-24-hours)
+- [Threat IP Prevalence](#threat-ip-prevalence)
+- [Threat IP, Allowed or Denied](#threat-ip-allowed-or-denied)
 ```
 ## Detailed Table of Events Filtered by Key Artifacts
 This query provides a detailed table of events filtered by key artifacts, including time, source, destination, and other relevant metadata.
@@ -87,7 +89,6 @@ This query checks for successful multi-factor authentication (MFA) events, filte
 index=* "mfa" "success" KeyArtifact
 | stats latest(_time) as Timestamp, values(user) as Username, values(host) as Host, values(event) as Event, values(src) as Source, values(ip) as IP, values(src_ip) as Source_IP
 | table Timestamp, Username, Host, Event, Source, IP, Source_IP
-
 ```
 [earliest="timestamp"] can be used from this command, to review activity of user after authentication. 
 
@@ -99,7 +100,7 @@ index=* "mfa" "failure" KeyArtifact
 | table Timestamp, Username, Host, Event, action, reason, result, Source, IP, Source_IP
 ```
 ## MFA Checker (Neutral)
-This query checks for failed multi-factor authentication (MFA) events, filtering by key artifacts and displaying detailed event information.
+This query checks for failed or succcessful multi-factor authentication (MFA) events, filtering by key artifacts and displaying detailed event information.
 ```splunk
 (index=* "mfa" ("success" OR "failure") KeyArtifact)
 | eval Status=if(searchmatch("success"), "Success", "Failure")
@@ -108,7 +109,7 @@ This query checks for failed multi-factor authentication (MFA) events, filtering
 | sort by Timestamp
 ```
 ## Authentication Review, 24 hours
-This query checks for failed multi-factor authentication (MFA) events, filtering by key artifacts and displaying detailed event information.
+Review the last 24 hours of an alerting user's authentication.
 ```splunk
 index=* "authentication" KeyArtifact
 | where _time >= relative_time(now(), "-24h@h")
@@ -117,3 +118,22 @@ index=* "authentication" KeyArtifact
 | table user, Total_Attempts, Actions, Host, Source_IP, Results, First_Attempt, Last_Attempt, Duration
 | sort by Last_Attempt desc
 ```
+
+## Threat IP Prevalence
+This query checks for prevalence of threat IP in the environment
+```splunk
+index=* KeyArtifact
+| stats count as Occurrences, dc(src_ip) as Unique_Source_IPs, dc(dest_ip) as Unique_Destination_IPs, values(src_ip) as Source_IPs, values(dest_ip) as Destination_IPs, values(host) as Hosts, earliest(_time) as First_Seen, latest(_time) as Last_Seen
+| table Occurrences, Unique_Source_IPs, Unique_Destination_IPs, Source_IPs, Destination_IPs, Hosts, First_Seen, Last_Seen
+| sort by Last_Seen desc
+```
+
+## Threat IP, allowed or denied
+This query checks for if traffic to threat IP is allowed by the firewall.
+```splunk
+index=* ("allow" OR "allowed" OR "accept" OR "accepted" OR "pass" OR "permitted" OR "success" OR "granted" OR "okay" OR "forwarded" OR "opened" OR "passed" OR "deny" OR "denied" OR "drop" OR "dropped" OR "block" OR "blocked" OR "reject" OR "rejected" OR "failure" OR "refused" OR "reset" OR "stopped" OR "closed" OR "filtered") KeyArtifact KeyArtifact
+| stats count as Occurrences, values(action) as Action, values(source_ip) as Source_IP, values(dest_ip) as Destination_IP, values(src_port) as Source_Port, values(dest_port) as Destination_Port, values(protocol) as Protocol, values(host) as Host, earliest(_time) as First_Seen, latest(_time) as Last_Seen
+| table Occurrences, Action, Source_IP, Destination_IP, Source_Port, Destination_Port, Protocol, Host, First_Seen, Last_Seen
+| sort by Last_Seen desc
+```
+
