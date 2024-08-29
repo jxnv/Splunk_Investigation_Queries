@@ -1,5 +1,5 @@
 # Phishing Investigation Notes
-This document contains details on investigation tactices when a phishing email is observed in the environment.
+This document contains details on investigation when a phishing email is observed in the environment.
 
 ```markdown
 ## Table of Contents
