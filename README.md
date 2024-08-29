@@ -1,7 +1,5 @@
-# Splunk_Investigation_Queries
-SOC Investigation Splunk Queries, these prompts can be copied and pasted, with only the replacement of "KeyArtifact" for an effective framework of an investigation
-
 # General Splunk Queries/Tables
+SOC Investigation Splunk Queries, these prompts can be copied and pasted, with only the replacement of "KeyArtifact" for an effective framework of an investigation of an incident generally using Splunk.
 
 ## Detailed Table of Events Filtered by Key Artifacts
 Index=* KeyArtifact
@@ -28,3 +26,24 @@ index=* KeyArtifact action="failed" OR status="failure"
 index=* KeyArtifact action="success" OR status="success"
 | table _time, user, src_ip, dest_ip, app, status
 | sort by _time
+
+## User Activity Monitoring
+index=* KeyArtifact
+| table _time, user, action, src_ip, dest_ip, app
+| sort by _time
+
+## Admin Activity Tracker
+index=* KeyArtifacts
+| stats latest(_time) as Timestamp, values(user) as Username, values(host) as Host, values(process) as Process, values{commandline} as CommandLine, values(action) as Action
+| table Timestamp, Username, Host, Process, CommandLine, Action
+| sort by Timestamp
+
+## MFA Checker (Success)
+index=* "mfa" "success" KeyArtifact
+| stats latest(_time) as Timestamp, values(user) as Username, values(host) as Host, values(event) as Event, values(src) as Source, values(ip) as IP, values(src_ip) as Source_IP
+| table Timestamp, Username, Host, Event, Source, IP, Source_IP
+
+## MFA Checker
+index=* "mfa" "failure" KeyArtifact
+| stats latest(_time) as Timestamp, values(user) as Username, values(host) as Host, values(event) as Event, values(src) as Source, values(ip) as IP, values(src_ip) as Source_IP
+| table Timestamp, Username, Host, Event, action, reason, result, Source, IP, Source_IP
