@@ -93,9 +93,27 @@ index=* "mfa" "success" KeyArtifact
 
 ## MFA Checker (Failure)
 This query checks for failed multi-factor authentication (MFA) events, filtering by key artifacts and displaying detailed event information.
-
 ```splunk
 index=* "mfa" "failure" KeyArtifact
 | stats latest(_time) as Timestamp, values(user) as Username, values(host) as Host, values(event) as Event, values(src) as Source, values(ip) as IP, values(src_ip) as Source_IP
 | table Timestamp, Username, Host, Event, action, reason, result, Source, IP, Source_IP
+```
+## MFA Checker (Neutral)
+This query checks for failed multi-factor authentication (MFA) events, filtering by key artifacts and displaying detailed event information.
+```splunk
+(index=* "mfa" ("success" OR "failure") KeyArtifact)
+| eval Status=if(searchmatch("success"), "Success", "Failure")
+| stats latest(_time) as Timestamp, values(user) as Username, values(host) as Host, values(event) as Event, values(src) as Source, values(ip) as IP, values(src_ip) as Source_IP, values(action) as Action, values(reason) as Reason, values(result) as Result, count by Status
+| table Timestamp, Username, Host, Event, Status, Action, Reason, Result, Source, IP, Source_IP
+| sort by Timestamp
+```
+## Authentication Review, 24 hours
+This query checks for failed multi-factor authentication (MFA) events, filtering by key artifacts and displaying detailed event information.
+```splunk
+index=* "authentication" KeyArtifact
+| where _time >= relative_time(now(), "-24h@h")
+| stats count as Total_Attempts, values(action) as Actions, values(host) as Host, values(src_ip) as Source_IP, values(result) as Results, earliest(_time) as First_Attempt, latest(_time) as Last_Attempt by user
+| eval Duration = tostring(Last_Attempt - First_Attempt, "duration")
+| table user, Total_Attempts, Actions, Host, Source_IP, Results, First_Attempt, Last_Attempt, Duration
+| sort by Last_Attempt desc
 ```
