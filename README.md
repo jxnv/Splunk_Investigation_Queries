@@ -1,9 +1,7 @@
-Here’s a reformatted version of your Splunk documentation to improve readability and organization:
-
-```markdown
-# General Splunk Queries/Tables
+# Security Analyst Investigation Notes Splunk
 This document contains Splunk queries for SOC investigation purposes. These prompts can be copied and pasted directly into Splunk, with "KeyArtifact" replaced by the appropriate search term relevant to your investigation.
 
+```markdown
 ## Table of Contents
 - [Detailed Table of Events Filtered by Key Artifacts](#detailed-table-of-events-filtered-by-key-artifacts)
 - [Deduplication and Generating Stats for Key Artifact Sources](#deduplication-and-generating-stats-for-key-artifact-sources)
@@ -15,6 +13,8 @@ This document contains Splunk queries for SOC investigation purposes. These prom
 - [MFA Checker (Success)](#mfa-checker-success)
 - [MFA Checker (Failure)](#mfa-checker-failure)
 
+
+```
 ## Detailed Table of Events Filtered by Key Artifacts
 This query provides a detailed table of events filtered by key artifacts, including time, source, destination, and other relevant metadata.
 
