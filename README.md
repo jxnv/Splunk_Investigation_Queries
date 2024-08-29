@@ -87,7 +87,9 @@ This query checks for successful multi-factor authentication (MFA) events, filte
 index=* "mfa" "success" KeyArtifact
 | stats latest(_time) as Timestamp, values(user) as Username, values(host) as Host, values(event) as Event, values(src) as Source, values(ip) as IP, values(src_ip) as Source_IP
 | table Timestamp, Username, Host, Event, Source, IP, Source_IP
+
 ```
+[earliest="timestamp"] can be used from this command, to review activity of user after authentication. 
 
 ## MFA Checker (Failure)
 This query checks for failed multi-factor authentication (MFA) events, filtering by key artifacts and displaying detailed event information.
