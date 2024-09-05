@@ -178,3 +178,64 @@ index=security sourcetype=linux_secure "failed password" earliest=-14d@d latest=
 | timewrap 1w
 ```
 - This query counts failed password attempts daily and compares the counts week-over-week.
+
+### Timezone Adjustment Example
+index=sales sourcetype=vendor_sales earliest=-2d@d latest=@d
+| eval my_hour = strftime(_time,"%H")
+| search my_hour>=2 AND my_hour<5
+| bin span=1h _time
+| stats sum(price) as "Hourly Sales"" by _time
+| eval Hour=strftime(_time, "%b %d, %I %p")
+table Hour, "Hourly Sales"
+
+### Timezone Example
+
+This query analyzes vendor sales data, filtering events based on specific hours of the day and calculating hourly sales totals within the specified time range.
+
+#### Explanation of the Query:
+
+1. **Search for Sales Data**
+   ```
+   index=sales sourcetype=vendor_sales earliest=-2d@d latest=@d
+   ```
+   - Searches within the `sales` index and the `vendor_sales` sourcetype.
+   - Limits the results to the last two days (`earliest=-2d@d`) up until the end of the current day (`latest=@d`).
+
+2. **Extracting the Hour from the Event Time**
+   ```
+   | eval my_hour = strftime(_time, "%H")
+   ```
+   - Uses the `strftime` function to extract the hour from the event's timestamp (`_time`) in 24-hour format (`%H`).
+   - Stores the result in a new field called `my_hour`.
+
+3. **Filter Events Based on Specific Hours**
+   ```
+   | search my_hour>=2 AND my_hour<5
+   ```
+   - Filters the events to only include those that occurred between 2 AM and 5 AM.
+
+4. **Binning Events by Hour**
+   ```
+   | bin span=1h _time
+   ```
+   - Groups the events into 1-hour intervals based on their timestamp (`_time`).
+
+5. **Calculating Hourly Sales Totals**
+   ```
+   | stats sum(price) as "Hourly Sales" by _time
+   ```
+   - Calculates the total sales (`sum(price)`) for each hour and assigns it to the field `"Hourly Sales"`.
+   - Groups the results by the `_time` field.
+
+6. **Formatting the Time for Display**
+   ```
+   | eval Hour = strftime(_time, "%b %d, %I %p")
+   ```
+   - Converts the `_time` field into a more readable format: "Month Day, Hour AM/PM" (e.g., `Sep 01, 03 PM`).
+   - Saves the formatted time as `Hour`.
+
+7. **Final Display**
+   ```
+   | table Hour, "Hourly Sales"
+   ```
+   - Displays the `Hour` and `Hourly Sales` fields in a table format for easy viewing.
