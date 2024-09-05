@@ -63,3 +63,118 @@ If no time is specified, Splunk defaults to using the **indexed time** (the time
 
 ### Time Binning: Grouping Events by Time
 You can use the `bin` command to group events into equal-sized time chunks. For example, using `bin span=1h _time` will group events by 1-hour intervals. This is particularly useful for summarizing data over consistent time frames.
+
+-------------------------------------------------------------------------------------------------
+## Formatting Time in Splunk
+
+You can use the `eval` command to reformat time fields or create new time-based fields in your Splunk searches.
+
+### Syntax:
+```spl
+| eval <field1>=<expression1> [, <field2>=<expression2>]
+```
+
+### Examples:
+1. **Current Time**:
+   ```spl
+   | eval field1 = now()
+   ```
+   - Returns the time the search started (in epoch seconds).
+
+2. **Event Processing Time**:
+   ```spl
+   | eval field1 = time()
+   ```
+   - Returns the time the event was processed by the `eval` command.
+
+3. **Relative Time**:
+   ```spl
+   | eval field1 = relative_time(X, Y)
+   ```
+   - Returns an epoch time relative to a supplied time.
+   - **X** is the starting time in epoch seconds.
+   - **Y** is a relative time specifier (e.g., `-1d@d` for 1 day ago at midnight).
+
+   **Example**:
+   ```spl
+   | eval yesterday = relative_time(now(), "-1d@h")
+   ```
+   - This creates a field called `yesterday`, representing the start of the previous day.
+
+---
+
+### Time Formatting Functions
+Splunk provides the `strftime` and `strptime` functions to format or parse time strings.
+
+- **`strftime`**: Converts epoch time into a formatted string.
+- **`strptime`**: Converts a formatted time string into epoch time.
+
+#### Common Formatting Variables:
+- **Time:**
+  - `%H` → 24-hour format (00–23)
+  - `%T` → 24-hour (H:M:S)
+  - `%I` → 12-hour format (01–12)
+  - `%M` → Minute (00–59)
+  - `%p` → AM or PM
+
+- **Days:**
+  - `%d` → Day of the month (01–31)
+  - `%w` → Day of the week (0–6, Sunday = 0)
+  - `%a` → Abbreviated weekday (`Sun`)
+  - `%A` → Full weekday name (`Sunday`)
+  - `%F` → ISO date format (Year-Month-Day, `%Y-%m-%d`)
+
+- **Months and Years:**
+  - `%b` → Abbreviated month name (`Jan`)
+  - `%B` → Full month name (`January`)
+  - `%m` → Month number (01–12)
+  - `%Y` → Year (`2020`)
+
+### Example: Formatting a Date String
+```spl
+| eval yesterdayString = strftime(yesterday, "%F %H:%M")
+```
+- Converts the epoch time in the `yesterday` field to a readable string like "2024-09-01 14:30."
+
+## Using Time Commands in Splunk
+
+### `timechart` Command:
+The `timechart` command performs statistical aggregations over time, automatically plotting time on the x-axis.
+
+#### Syntax:
+```spl
+| timechart <stats-function>(<field>) BY <field> [span=<int><timescale>] [limit=<int>]
+```
+
+- **Purpose**: Performs statistical aggregations (e.g., `count`, `sum`) and trends data over time.
+- **By Clause**: Splits results by another field (optional).
+- **Span Option**: Controls the time interval (e.g., `15m`, `1h`, `1d`).
+- **Limit Option**: Restricts the number of series plotted (optional).
+
+#### Example:
+```spl
+index=security sourcetype=linux_secure vendor_action=*
+| timechart span=15m count BY vendor_action
+```
+- This query aggregates event counts over 15-minute intervals, split by the `vendor_action` field.
+
+---
+
+### `timewrap` Command:
+The `timewrap` command compares time-based data over specified intervals, such as day-over-day or week-over-week comparisons.
+
+#### Syntax:
+```spl
+| timewrap [<int>]<timescale>
+```
+
+- **Purpose**: Allows comparison of data over time periods like week-over-week or month-over-month.
+- **Timescale**: Defines the period to compare (e.g., `1d`, `1w`).
+
+#### Example:
+```spl
+index=security sourcetype=linux_secure "failed password" earliest=-14d@d latest=@d
+| timechart span=1d count AS Failures
+| timewrap 1w
+```
+- This query counts failed password attempts daily and compares the counts week-over-week.
